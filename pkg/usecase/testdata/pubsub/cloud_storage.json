@@ -1,0 +1,19 @@
+{
+  "message": {
+    "attributes": {
+      "bucketId": "mizutani-test",
+      "eventTime": "2024-06-16T02:53:46.032367Z",
+      "eventType": "OBJECT_FINALIZE",
+      "notificationConfig": "projects/_/buckets/mizutani-test/notificationConfigs/6",
+      "objectGeneration": "1718506426029008",
+      "objectId": "test-key/1c04d5b6-a079-47ce-ac7c-a3f014566064.txt",
+      "payloadFormat": "JSON_API_V1"
+    },
+    "data": "ewogICJraW5kIjogInN0b3JhZ2Ujb2JqZWN0IiwKICAiaWQiOiAibWl6dXRhbmktdGVzdC90ZXN0LWtleS8xYzA0ZDViNi1hMDc5LTQ3Y2UtYWM3Yy1hM2YwMTQ1NjYwNjQudHh0LzE3MTg1MDY0MjYwMjkwMDgiLAogICJzZWxmTGluayI6ICJodHRwczovL3d3dy5nb29nbGVhcGlzLmNvbS9zdG9yYWdlL3YxL2IvbWl6dXRhbmktdGVzdC9vL3Rlc3Qta2V5JTJGMWMwNGQ1YjYtYTA3OS00N2NlLWFjN2MtYTNmMDE0NTY2MDY0LnR4dCIsCiAgIm5hbWUiOiAidGVzdC1rZXkvMWMwNGQ1YjYtYTA3OS00N2NlLWFjN2MtYTNmMDE0NTY2MDY0LnR4dCIsCiAgImJ1Y2tldCI6ICJtaXp1dGFuaS10ZXN0IiwKICAiZ2VuZXJhdGlvbiI6ICIxNzE4NTA2NDI2MDI5MDA4IiwKICAibWV0YWdlbmVyYXRpb24iOiAiMSIsCiAgImNvbnRlbnRUeXBlIjogImFwcGxpY2F0aW9uL2pzb24iLAogICJ0aW1lQ3JlYXRlZCI6ICIyMDI0LTA2LTE2VDAyOjUzOjQ2LjAzMloiLAogICJ1cGRhdGVkIjogIjIwMjQtMDYtMTZUMDI6NTM6NDYuMDMyWiIsCiAgInN0b3JhZ2VDbGFzcyI6ICJTVEFOREFSRCIsCiAgInRpbWVTdG9yYWdlQ2xhc3NVcGRhdGVkIjogIjIwMjQtMDYtMTZUMDI6NTM6NDYuMDMyWiIsCiAgInNpemUiOiAiMjgiLAogICJtZDVIYXNoIjogInA2V0E5Q1p1YnoxNC9pUHczTmc2T2c9PSIsCiAgIm1lZGlhTGluayI6ICJodHRwczovL3N0b3JhZ2UuZ29vZ2xlYXBpcy5jb20vZG93bmxvYWQvc3RvcmFnZS92MS9iL21penV0YW5pLXRlc3Qvby90ZXN0LWtleSUyRjFjMDRkNWI2LWEwNzktNDdjZS1hYzdjLWEzZjAxNDU2NjA2NC50eHQ/Z2VuZXJhdGlvbj0xNzE4NTA2NDI2MDI5MDA4JmFsdD1tZWRpYSIsCiAgImNvbnRlbnRFbmNvZGluZyI6ICJnemlwIiwKICAiY3JjMzJjIjogIitGNG9Odz09IiwKICAiZXRhZyI6ICJDTkNueGFpUDM0WURFQUU9Igp9Cg==",
+    "messageId": "11523869907369307",
+    "message_id": "11523869907369307",
+    "publishTime": "2024-06-16T02:53:46.174Z",
+    "publish_time": "2024-06-16T02:53:46.174Z"
+  },
+  "subscription": "projects/mizutani-sandbox/subscriptions/to-httpdump"
+}
