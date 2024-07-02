@@ -3,6 +3,7 @@ package cli
 import (
 	"os"
 
+	"github.com/m-mizutani/nounify/pkg/domain/types"
 	"github.com/m-mizutani/nounify/pkg/utils/logging"
 	"github.com/urfave/cli/v2"
 )
@@ -14,8 +15,9 @@ func Run(argv []string) error {
 	)
 
 	app := cli.App{
-		Name:  "nounify",
-		Usage: "Universal Slack notification tool for ALL HTTP webhooks",
+		Name:    "nounify",
+		Usage:   "Universal Slack notification tool for ALL HTTP webhooks",
+		Version: types.AppVersion,
 
 		Flags: []cli.Flag{
 			&cli.StringFlag{
