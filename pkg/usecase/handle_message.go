@@ -39,10 +39,20 @@ func (x *UseCases) HandleMessage(ctx context.Context, schema types.Schema, input
 	return nil
 }
 
+var preservedColors = map[string]string{
+	"info":    "#2EB67D",
+	"warning": "#FFA500",
+	"error":   "#FF0000",
+}
+
 func buildSlackMessage(msg model.Message) slack.Attachment {
 	color := "#2EB67D"
 	if msg.Color != "" {
-		color = msg.Color
+		if preserved, ok := preservedColors[msg.Color]; ok {
+			color = preserved
+		} else {
+			color = msg.Color
+		}
 	}
 
 	var blockSet []slack.Block
