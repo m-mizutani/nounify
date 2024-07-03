@@ -40,7 +40,7 @@ func NewMessageQueryInput(r *http.Request) (*MessageQueryInput, error) {
 		Method: r.Method,
 		Path:   r.URL.Path,
 		Header: map[string]string{},
-		Body:   body,
+		Body:   data,
 	}
 
 	for key := range r.Header {
