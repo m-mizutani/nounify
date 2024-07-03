@@ -45,10 +45,10 @@ func cmdServe() *cli.Command {
 				Required:    true,
 			},
 			&cli.StringSliceFlag{
-				Name:        "policy-file",
-				Usage:       "Policy file path",
+				Name:        "policy",
+				Usage:       "Policy path of file(s). When path is directory, all files in the directory are loaded. File extension must be .rego",
 				Aliases:     []string{"p"},
-				EnvVars:     []string{"NOUNIFY_POLICY_FILE"},
+				EnvVars:     []string{"NOUNIFY_POLICY"},
 				Destination: &policyFiles,
 				Required:    true,
 			},
