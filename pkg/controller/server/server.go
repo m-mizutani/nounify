@@ -43,8 +43,12 @@ func New(uc interfaces.UseCases, options ...Option) http.Handler {
 	}
 
 	route := chi.NewRouter()
-	route.Use(logger)
+	route.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("OK:" + types.AppVersion))
+	})
 	route.Route("/msg", func(r chi.Router) {
+		r.Use(logger)
 		for _, secret := range cfg.githubSecrets {
 			r.Use(authGitHubWebhook(secret))
 		}

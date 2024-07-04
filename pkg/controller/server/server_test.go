@@ -12,6 +12,16 @@ import (
 	"github.com/m-mizutani/nounify/pkg/domain/mock"
 )
 
+func TestHealthCheck(t *testing.T) {
+	ucMock := mock.UseCasesMock{}
+	w := httptest.NewRecorder()
+
+	r := httptest.NewRequest(http.MethodGet, "/health", nil)
+	mux := server.New(&ucMock)
+	mux.ServeHTTP(w, r)
+	gt.Equal(t, w.Code, http.StatusOK)
+}
+
 func TestServerError(t *testing.T) {
 	type testCase struct {
 		req      func() *http.Request
