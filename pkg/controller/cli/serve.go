@@ -21,7 +21,8 @@ func cmdServe() *cli.Command {
 		slackToken  string
 		policyFiles cli.StringSlice
 
-		githubSecrets cli.StringSlice
+		githubSecrets       cli.StringSlice
+		enableGoogleIDToken bool
 	)
 
 	return &cli.Command{
@@ -59,6 +60,13 @@ func cmdServe() *cli.Command {
 				EnvVars:     []string{"NOUNIFY_GITHUB_SECRET"},
 				Destination: &githubSecrets,
 			},
+
+			&cli.BoolFlag{
+				Name:        "google-id-token",
+				Usage:       "Enable Google ID token verification",
+				EnvVars:     []string{"NOUNIFY_GOOGLE_ID_TOKEN"},
+				Destination: &enableGoogleIDToken,
+			},
 		},
 
 		Action: func(c *cli.Context) error {
@@ -79,11 +87,14 @@ func cmdServe() *cli.Command {
 			for _, secret := range githubSecrets.Value() {
 				serverOptions = append(serverOptions, server.WithGitHubSecret(secret))
 			}
+			if enableGoogleIDToken {
+				serverOptions = append(serverOptions, server.WithGoogleIDTokenValidation())
+			}
 
 			s := &http.Server{
 				Addr:              addr,
 				ReadHeaderTimeout: 3 * time.Second,
-				Handler:           server.New(uc),
+				Handler:           server.New(uc, serverOptions...),
 			}
 
 			errCh := make(chan error, 1)
