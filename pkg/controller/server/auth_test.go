@@ -9,6 +9,7 @@ import (
 	"encoding/hex"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/m-mizutani/gt"
@@ -26,10 +27,13 @@ var githubWebhookExample []byte
 //go:embed testdata/policy_github_auth.rego
 var policyGitHubAuth string
 
+//go:embed testdata/policy_github_action.rego
+var policyGitHubAction string
+
 //go:embed testdata/policy_google_auth.rego
 var policyGoogleAuth string
 
-func TestGitHubAuth(t *testing.T) {
+func TestGitHubAppAuth(t *testing.T) {
 	const testSecret = "test-test-test"
 	ucMock := &mock.UseCasesMock{
 		HandleMessageFunc: func(ctx context.Context, schema types.Schema, input *model.MessageQueryInput) error {
@@ -57,6 +61,52 @@ func TestGitHubAuth(t *testing.T) {
 
 	gt.Equal(t, w.Code, 200)
 	gt.A(t, ucMock.HandleMessageCalls()).Length(1)
+}
+
+func TestGitHubActionToken(t *testing.T) {
+	policy, err := opac.New(opac.Data(map[string]string{"auth": policyGitHubAction}))
+	gt.NoError(t, err)
+
+	ucMock := &mock.UseCasesMock{
+		HandleMessageFunc: func(ctx context.Context, schema types.Schema, input *model.MessageQueryInput) error {
+			return nil
+		},
+	}
+
+	mux := server.New(ucMock,
+		server.WithGitHubActionTokenValidation(),
+		server.WithPolicy(policy),
+	)
+
+	t.Run("With valid token", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		token := strings.TrimSpace(testutil.LoadEnv(t, "TEST_GITHUB_ACTION_TOKEN"))
+		req := httptest.NewRequest("POST", "/msg/github", nil)
+		req.Header.Set("Authorization", "Bearer "+token)
+		mux.ServeHTTP(w, req)
+
+		gt.Equal(t, w.Code, http.StatusOK)
+		gt.A(t, ucMock.HandleMessageCalls()).Length(1)
+	})
+
+	t.Run("Without token", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		req := httptest.NewRequest("POST", "/msg/github", nil)
+		mux.ServeHTTP(w, req)
+
+		gt.Equal(t, w.Code, http.StatusForbidden)
+		gt.A(t, ucMock.HandleMessageCalls()).Length(0)
+	})
+
+	t.Run("With invalid token", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		req := httptest.NewRequest("POST", "/msg/github", nil)
+		req.Header.Set("Authorization", "Bearer invalid-token")
+		mux.ServeHTTP(w, req)
+
+		gt.Equal(t, w.Code, http.StatusForbidden)
+		gt.A(t, ucMock.HandleMessageCalls()).Length(0)
+	})
 }
 
 func TestGoogleIDTokenAuth(t *testing.T) {

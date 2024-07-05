@@ -21,8 +21,9 @@ func cmdServe() *cli.Command {
 		slackToken  string
 		policyFiles cli.StringSlice
 
-		githubSecrets       cli.StringSlice
-		enableGoogleIDToken bool
+		githubSecrets           cli.StringSlice
+		enableGitHubActionToken bool
+		enableGoogleIDToken     bool
 	)
 
 	return &cli.Command{
@@ -60,7 +61,12 @@ func cmdServe() *cli.Command {
 				EnvVars:     []string{"NOUNIFY_GITHUB_SECRET"},
 				Destination: &githubSecrets,
 			},
-
+			&cli.BoolFlag{
+				Name:        "github-action-token",
+				Usage:       "Enable GitHub action token verification",
+				EnvVars:     []string{"NOUNIFY_GITHUB_ACTION_TOKEN"},
+				Destination: &enableGitHubActionToken,
+			},
 			&cli.BoolFlag{
 				Name:        "google-id-token",
 				Usage:       "Enable Google ID token verification",
