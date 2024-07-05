@@ -96,6 +96,9 @@ func cmdServe() *cli.Command {
 			if enableGoogleIDToken {
 				serverOptions = append(serverOptions, server.WithGoogleIDTokenValidation())
 			}
+			if enableGitHubActionToken {
+				serverOptions = append(serverOptions, server.WithGitHubActionTokenValidation())
+			}
 
 			s := &http.Server{
 				Addr:              addr,
