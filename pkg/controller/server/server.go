@@ -3,6 +3,7 @@ package server
 import (
 	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/m-mizutani/nounify/pkg/domain/interfaces"
@@ -60,7 +61,7 @@ func New(uc interfaces.UseCases, options ...Option) http.Handler {
 			r.Use(authWithPolicy(cfg.policy))
 		}
 
-		r.Post("/{schema}", handleMessage(uc))
+		r.Post("/*", handleMessage(uc))
 	})
 
 	return route
@@ -78,7 +79,7 @@ func handleError(w http.ResponseWriter, err error) {
 
 func handleMessage(uc interfaces.UseCases) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		schema := chi.URLParam(r, "schema")
+		schema := strings.Replace(chi.URLParam(r, "*"), "/", ".", -1)
 
 		input, err := model.NewMessageQueryInput(r)
 		if err != nil {

@@ -2,6 +2,7 @@ package server_test
 
 import (
 	"bytes"
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -10,6 +11,8 @@ import (
 
 	"github.com/m-mizutani/nounify/pkg/controller/server"
 	"github.com/m-mizutani/nounify/pkg/domain/mock"
+	"github.com/m-mizutani/nounify/pkg/domain/model"
+	"github.com/m-mizutani/nounify/pkg/domain/types"
 )
 
 func TestHealthCheck(t *testing.T) {
@@ -22,7 +25,7 @@ func TestHealthCheck(t *testing.T) {
 	gt.Equal(t, w.Code, http.StatusOK)
 }
 
-func TestServerError(t *testing.T) {
+func TestServer(t *testing.T) {
 	type testCase struct {
 		req      func() *http.Request
 		expCode  int
@@ -32,7 +35,11 @@ func TestServerError(t *testing.T) {
 
 	test := func(tc testCase) func(*testing.T) {
 		return func(t *testing.T) {
-			ucMock := mock.UseCasesMock{}
+			ucMock := mock.UseCasesMock{
+				HandleMessageFunc: func(ctx context.Context, schema types.Schema, input *model.MessageQueryInput) error {
+					return nil
+				},
+			}
 			w := httptest.NewRecorder()
 
 			mux := server.New(&ucMock)
@@ -68,6 +75,19 @@ func TestServerError(t *testing.T) {
 		expBody: ": invalid input: invalid character 'i' looking for beginning of value\n",
 		testMock: func(t *testing.T, ucMock *mock.UseCasesMock) {
 			gt.A(t, ucMock.HandleMessageCalls()).Length(0)
+		},
+	}))
+
+	t.Run("arbitrary path param", test(testCase{
+		req: func() *http.Request {
+			r := httptest.NewRequest(http.MethodPost, "/msg/my/test/path", bytes.NewReader([]byte("{}")))
+			r.Header.Set("Content-Type", "application/json")
+			return r
+		},
+		expCode: http.StatusOK,
+		testMock: func(t *testing.T, ucMock *mock.UseCasesMock) {
+			gt.A(t, ucMock.HandleMessageCalls()).Length(1)
+			gt.Equal(t, ucMock.HandleMessageCalls()[0].Schema, "my.test.path")
 		},
 	}))
 }
