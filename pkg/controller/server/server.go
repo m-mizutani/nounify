@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"strings"
@@ -9,6 +10,7 @@ import (
 	"github.com/m-mizutani/nounify/pkg/domain/interfaces"
 	"github.com/m-mizutani/nounify/pkg/domain/model"
 	"github.com/m-mizutani/nounify/pkg/domain/types"
+	"github.com/m-mizutani/nounify/pkg/utils/ctxutil"
 )
 
 type config struct {
@@ -77,28 +79,31 @@ func New(uc interfaces.UseCases, options ...Option) http.Handler {
 	return route
 }
 
-func handleError(w http.ResponseWriter, err error) {
+func handleError(ctx context.Context, w http.ResponseWriter, err error) {
 	code := http.StatusInternalServerError
 	var xErr types.Error
 	if errors.As(err, &xErr) {
 		code = xErr.Code()
 	}
 
+	ctxutil.Logger(ctx).Error("HTTP error", "err", err, "code", code)
+
 	http.Error(w, err.Error(), code)
 }
 
 func handleMessage(uc interfaces.UseCases) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
 		schema := strings.Replace(chi.URLParam(r, "*"), "/", ".", -1)
 
 		input, err := model.NewMessageQueryInput(r)
 		if err != nil {
-			handleError(w, err)
+			handleError(ctx, w, err)
 			return
 		}
 
-		if err := uc.HandleMessage(r.Context(), types.Schema(schema), input); err != nil {
-			handleError(w, err)
+		if err := uc.HandleMessage(ctx, types.Schema(schema), input); err != nil {
+			handleError(ctx, w, err)
 			return
 		}
 

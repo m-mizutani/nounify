@@ -163,15 +163,16 @@ func authWithPolicy(policy interfaces.Policy) middlewareFunc {
 				input.Auth.GitHub.Action = auth
 			}
 
+			ctx := r.Context()
 			var output model.AuthQueryOutput
-			if err := policy.Query(r.Context(), "data.auth", input, &output); err != nil {
-				handleError(w, err)
+			if err := policy.Query(ctx, "data.auth", input, &output); err != nil {
+				handleError(ctx, w, err)
 				return
 			}
 			ctxutil.Logger(r.Context()).Debug("auth query result", "input", input, "output", output)
 
 			if !output.Allow {
-				handleError(w, types.ErrForbidden)
+				handleError(ctx, w, types.ErrForbidden)
 				return
 			}
 
