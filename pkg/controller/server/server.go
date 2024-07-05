@@ -12,9 +12,10 @@ import (
 )
 
 type config struct {
-	policy                interfaces.Policy
-	githubSecrets         []string
-	validateGoogleIDToken bool
+	policy                    interfaces.Policy
+	githubSecrets             []string
+	validateGitHubActionToken bool
+	validateGoogleIDToken     bool
 }
 
 type Option func(*config)
@@ -28,6 +29,12 @@ func WithPolicy(policy interfaces.Policy) Option {
 func WithGitHubSecret(secret string) Option {
 	return func(cfg *config) {
 		cfg.githubSecrets = append(cfg.githubSecrets, secret)
+	}
+}
+
+func WithGitHubActionTokenValidation() Option {
+	return func(cfg *config) {
+		cfg.validateGitHubActionToken = true
 	}
 }
 
@@ -52,6 +59,9 @@ func New(uc interfaces.UseCases, options ...Option) http.Handler {
 		r.Use(logger)
 		for _, secret := range cfg.githubSecrets {
 			r.Use(authGitHubWebhook(secret))
+		}
+		if cfg.validateGitHubActionToken {
+			r.Use(authGitHubActionToken())
 		}
 		if cfg.validateGoogleIDToken {
 			r.Use(authGoogleIDToken())

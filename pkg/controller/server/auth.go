@@ -19,6 +19,11 @@ import (
 
 type middlewareFunc func(next http.Handler) http.Handler
 
+func trimToken(token string) string {
+	e := min(len(token), 8)
+	return token[:e] + "..."
+}
+
 func authGitHubWebhook(secret string) middlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -34,10 +39,56 @@ func authGitHubWebhook(secret string) middlewareFunc {
 				return
 			}
 
-			auth := model.NewGitHubWebhookAuth(r)
+			auth := model.NewGitHubAppAuth(r)
 			r.Body = io.NopCloser(bytes.NewReader(payload))
-			r = r.WithContext(ctxutil.WithGitHubWebhookAuth(r.Context(), auth))
+			r = r.WithContext(ctxutil.WithGitHubAppAuth(r.Context(), auth))
 
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+func validateGitHubActionToken(authHdr string) (model.GitHubActionToken, error) {
+	hdr := strings.SplitN(authHdr, " ", 2)
+
+	// Skip if not Bearer token
+	if len(hdr) != 2 || hdr[0] != "Bearer" {
+		return nil, nil
+	}
+
+	jwksURL := "https://token.actions.githubusercontent.com/.well-known/jwks"
+
+	set, err := jwk.Fetch(context.Background(), jwksURL)
+	if err != nil {
+		return nil, goerr.Wrap(err)
+	}
+
+	token, err := jwt.ParseString(hdr[1], jwt.WithKeySet(set))
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to parse JWT token as GitHub Action token").With("token", trimToken(hdr[1]))
+	}
+
+	claims, err := token.AsMap(context.Background())
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to convert JWT token to map").With("token", trimToken(hdr[1]))
+	}
+
+	return claims, nil
+}
+
+func authGitHubActionToken() middlewareFunc {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			claims, err := validateGitHubActionToken(r.Header.Get("Authorization"))
+			if claims == nil {
+				if err != nil {
+					ctxutil.Logger(r.Context()).Warn("failed to parse JWT token", "err", err)
+				}
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			r = r.WithContext(ctxutil.WithGitHubActionToken(r.Context(), claims))
 			next.ServeHTTP(w, r)
 		})
 	}
@@ -60,12 +111,12 @@ func validateGoogleIDToken(authHdr string) (map[string]any, error) {
 
 	token, err := jwt.ParseString(hdr[1], jwt.WithKeySet(set))
 	if err != nil {
-		return nil, goerr.Wrap(err, "failed to parse JWT token").With("token", hdr[1])
+		return nil, goerr.Wrap(err, "failed to parse JWT token as Google ID Token").With("token", trimToken(hdr[1]))
 	}
 
 	claims, err := token.AsMap(context.Background())
 	if err != nil {
-		return nil, goerr.Wrap(err, "failed to convert JWT token to map").With("token", hdr[1])
+		return nil, goerr.Wrap(err, "failed to convert JWT token to map").With("token", trimToken(hdr[1]))
 	}
 
 	return claims, nil
@@ -105,8 +156,11 @@ func authWithPolicy(policy interfaces.Policy) middlewareFunc {
 			if claims := ctxutil.GoogleIDToken(r.Context()); claims != nil {
 				input.Auth.Google = claims
 			}
-			if auth := ctxutil.GitHubWebhookAuth(r.Context()); auth != nil {
-				input.Auth.GitHub = auth
+			if auth := ctxutil.GitHubAppAuth(r.Context()); auth != nil {
+				input.Auth.GitHub.App = auth
+			}
+			if auth := ctxutil.GitHubActionToken(r.Context()); auth != nil {
+				input.Auth.GitHub.Action = auth
 			}
 
 			var output model.AuthQueryOutput

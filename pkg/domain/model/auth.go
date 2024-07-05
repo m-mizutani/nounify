@@ -5,7 +5,12 @@ import (
 	"strconv"
 )
 
-type GitHubWebhookAuth struct {
+type GitHubAuth struct {
+	App    *GitHubAppAuth    `json:"app"`
+	Action GitHubActionToken `json:"action"`
+}
+
+type GitHubAppAuth struct {
 	// Example
 	/*
 		X-GitHub-Delivery: 2b844992-3689-11ef-89d9-8126a7fa0a02
@@ -22,8 +27,8 @@ type GitHubWebhookAuth struct {
 	InstallType string `json:"install_type"`
 }
 
-func NewGitHubWebhookAuth(r *http.Request) *GitHubWebhookAuth {
-	auth := GitHubWebhookAuth{
+func NewGitHubAppAuth(r *http.Request) *GitHubAppAuth {
+	auth := GitHubAppAuth{
 		Delivery:    r.Header.Get("X-GitHub-Delivery"),
 		Event:       r.Header.Get("X-GitHub-Event"),
 		InstallType: r.Header.Get("X-GitHub-Hook-Installation-Target-Type"),
@@ -39,3 +44,5 @@ func NewGitHubWebhookAuth(r *http.Request) *GitHubWebhookAuth {
 
 	return &auth
 }
+
+type GitHubActionToken map[string]any

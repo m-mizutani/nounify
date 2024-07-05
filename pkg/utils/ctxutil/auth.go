@@ -9,16 +9,29 @@ import (
 type ctxAuthKey string
 
 const (
-	ctxAuthGitHubWebhook = ctxAuthKey("github_webhook_auth")
+	ctxAuthGitHubApp     = ctxAuthKey("github_app_auth")
+	ctxAuthGitHubAction  = ctxAuthKey("github_action_auth")
 	ctxAuthGoogleIDToken = ctxAuthKey("google_id_token")
 )
 
-func WithGitHubWebhookAuth(ctx context.Context, auth *model.GitHubWebhookAuth) context.Context {
-	return context.WithValue(ctx, ctxAuthGitHubWebhook, auth)
+func WithGitHubAppAuth(ctx context.Context, auth *model.GitHubAppAuth) context.Context {
+	return context.WithValue(ctx, ctxAuthGitHubApp, auth)
 }
 
-func GitHubWebhookAuth(ctx context.Context) *model.GitHubWebhookAuth {
-	auth, ok := ctx.Value(ctxAuthGitHubWebhook).(*model.GitHubWebhookAuth)
+func GitHubAppAuth(ctx context.Context) *model.GitHubAppAuth {
+	auth, ok := ctx.Value(ctxAuthGitHubApp).(*model.GitHubAppAuth)
+	if !ok {
+		return nil
+	}
+	return auth
+}
+
+func WithGitHubActionToken(ctx context.Context, auth model.GitHubActionToken) context.Context {
+	return context.WithValue(ctx, ctxAuthGitHubAction, auth)
+}
+
+func GitHubActionToken(ctx context.Context) model.GitHubActionToken {
+	auth, ok := ctx.Value(ctxAuthGitHubAction).(model.GitHubActionToken)
 	if !ok {
 		return nil
 	}

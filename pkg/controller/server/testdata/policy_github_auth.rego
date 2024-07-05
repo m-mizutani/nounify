@@ -1,5 +1,5 @@
 package auth
 
 allow {
-    input.auth.github != null
+    input.auth.github.app != null
 }

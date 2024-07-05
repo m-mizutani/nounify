@@ -75,8 +75,8 @@ type AuthQueryInput struct {
 	Path   string            `json:"path"`
 	Header map[string]string `json:"header"`
 	Auth   struct {
-		GitHub *GitHubWebhookAuth `json:"github"`
-		Google map[string]any     `json:"google"`
+		GitHub GitHubAuth     `json:"github"`
+		Google map[string]any `json:"google"`
 	} `json:"auth"`
 }
 
