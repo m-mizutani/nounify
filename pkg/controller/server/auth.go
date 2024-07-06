@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/google/go-github/v62/github"
 	"github.com/lestrrat-go/jwx/v2/jwk"
@@ -82,7 +83,7 @@ func authGitHubActionToken() middlewareFunc {
 			claims, err := validateGitHubActionToken(r.Header.Get("Authorization"))
 			if claims == nil {
 				if err != nil {
-					ctxutil.Logger(r.Context()).Warn("failed to parse JWT token", "err", err)
+					ctxutil.Logger(r.Context()).Debug("failed to parse JWT token", "err", err)
 				}
 				next.ServeHTTP(w, r)
 				return
@@ -128,7 +129,7 @@ func authGoogleIDToken() middlewareFunc {
 			claims, err := validateGoogleIDToken(r.Header.Get("Authorization"))
 			if claims == nil {
 				if err != nil {
-					ctxutil.Logger(r.Context()).Warn("failed to fetch JWK set", "err", err)
+					ctxutil.Logger(r.Context()).Debug("failed to fetch JWK set", "err", err)
 				}
 				next.ServeHTTP(w, r)
 				return
@@ -144,13 +145,31 @@ func authFromContext(ctx context.Context) model.AuthContext {
 	var auth model.AuthContext
 
 	if claims := ctxutil.GoogleIDToken(ctx); claims != nil {
-		auth.Google = claims
+		auth.Google = make(map[string]any, len(claims))
+		for key, value := range claims {
+			switch v := value.(type) {
+			case time.Time:
+				auth.Google[key] = v.Unix()
+			default:
+				auth.Google[key] = value
+			}
+		}
 	}
+
 	if claims := ctxutil.GitHubAppAuth(ctx); claims != nil {
 		auth.GitHub.App = claims
 	}
-	if clams := ctxutil.GitHubActionToken(ctx); clams != nil {
-		auth.GitHub.Action = clams
+
+	if claims := ctxutil.GitHubActionToken(ctx); claims != nil {
+		auth.GitHub.Action = make(map[string]any, len(claims))
+		for key, value := range claims {
+			switch v := value.(type) {
+			case time.Time:
+				auth.GitHub.Action[key] = v.Unix()
+			default:
+				auth.GitHub.Action[key] = value
+			}
+		}
 	}
 
 	return auth
