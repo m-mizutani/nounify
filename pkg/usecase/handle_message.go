@@ -17,7 +17,7 @@ func (x *UseCases) HandleMessage(ctx context.Context, schema types.Schema, input
 	if err := x.policy.Query(ctx, schema.ToQuery(), input, &output); err != nil {
 		return goerr.Wrap(err).With("query", schema.ToQuery())
 	}
-	ctxutil.Logger(ctx).Info("run query", "input", input, "output", output)
+	ctxutil.Logger(ctx).Info("msg query result", "input", input, "output", output)
 
 	for _, msg := range output.Messages {
 		attachment := buildSlackMessage(msg)
