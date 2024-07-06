@@ -122,6 +122,9 @@ func TestGoogleIDTokenAuth(t *testing.T) {
 		return func(t *testing.T) {
 			ucMock := &mock.UseCasesMock{
 				HandleMessageFunc: func(ctx context.Context, schema types.Schema, input *model.MessageQueryInput) error {
+					v, ok := input.Auth.Google["exp"].(int64)
+					gt.True(t, ok)
+					gt.N(t, v).Greater(0)
 					return nil
 				},
 			}
