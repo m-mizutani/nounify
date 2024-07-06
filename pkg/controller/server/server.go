@@ -13,7 +13,7 @@ import (
 	"github.com/m-mizutani/nounify/pkg/domain/interfaces"
 	"github.com/m-mizutani/nounify/pkg/domain/model"
 	"github.com/m-mizutani/nounify/pkg/domain/types"
-	"github.com/m-mizutani/nounify/pkg/utils/ctxutil"
+	"github.com/m-mizutani/nounify/pkg/utils/errutil"
 )
 
 type config struct {
@@ -115,7 +115,7 @@ func handleError(ctx context.Context, w http.ResponseWriter, err error, options 
 		code = xErr.Code()
 	}
 
-	ctxutil.Logger(ctx).Error("HTTP error", "err", err, "code", code)
+	errutil.Handle(ctx, "HTTP error", err)
 
 	if opt.forceCode > 0 {
 		code = opt.forceCode

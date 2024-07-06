@@ -1,9 +1,11 @@
 package cli
 
 import (
+	"context"
 	"os"
 
 	"github.com/m-mizutani/nounify/pkg/domain/types"
+	"github.com/m-mizutani/nounify/pkg/utils/errutil"
 	"github.com/m-mizutani/nounify/pkg/utils/logging"
 	"github.com/urfave/cli/v2"
 )
@@ -49,7 +51,7 @@ func Run(argv []string) error {
 	}
 
 	if err := app.Run(argv); err != nil {
-		logging.Default().Error("exit with failure", "err", err)
+		errutil.Handle(context.Background(), "exit with failure", err)
 		return err
 	}
 
