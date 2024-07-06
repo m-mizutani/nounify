@@ -2,11 +2,14 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"strings"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/m-mizutani/goerr"
 	"github.com/m-mizutani/nounify/pkg/domain/interfaces"
 	"github.com/m-mizutani/nounify/pkg/domain/model"
 	"github.com/m-mizutani/nounify/pkg/domain/types"
@@ -91,12 +94,46 @@ func handleError(ctx context.Context, w http.ResponseWriter, err error) {
 	http.Error(w, err.Error(), code)
 }
 
+func newMessageQueryInput(r *http.Request) (*model.MessageQueryInput, error) {
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		return nil, goerr.Wrap(types.ErrInvalidInput.Wrap(err)).With("method", r.Method).With("path", r.URL.Path)
+	}
+
+	var data any
+	switch strings.ToLower(r.Header.Get("Content-Type")) {
+	case "application/json":
+		if err := json.Unmarshal(body, &data); err != nil {
+			return nil, goerr.Wrap(types.ErrInvalidInput.Wrap(err)).
+				With("method", r.Method).
+				With("path", r.URL.Path).
+				With("body", string(body))
+		}
+
+	default:
+		data = string(body)
+	}
+
+	headers := map[string]string{}
+	for key := range r.Header {
+		headers[key] = r.Header.Get(key)
+	}
+
+	return &model.MessageQueryInput{
+		Method: r.Method,
+		Path:   r.URL.Path,
+		Header: headers,
+		Body:   data,
+		Auth:   authFromContext(r.Context()),
+	}, nil
+}
+
 func handleMessage(uc interfaces.UseCases) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		schema := strings.Replace(chi.URLParam(r, "*"), "/", ".", -1)
 
-		input, err := model.NewMessageQueryInput(r)
+		input, err := newMessageQueryInput(r)
 		if err != nil {
 			handleError(ctx, w, err)
 			return

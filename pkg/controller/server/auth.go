@@ -140,6 +140,22 @@ func authGoogleIDToken() middlewareFunc {
 	}
 }
 
+func authFromContext(ctx context.Context) model.AuthContext {
+	var auth model.AuthContext
+
+	if claims := ctxutil.GoogleIDToken(ctx); claims != nil {
+		auth.Google = claims
+	}
+	if claims := ctxutil.GitHubAppAuth(ctx); claims != nil {
+		auth.GitHub.App = claims
+	}
+	if clams := ctxutil.GitHubActionToken(ctx); clams != nil {
+		auth.GitHub.Action = clams
+	}
+
+	return auth
+}
+
 func authWithPolicy(policy interfaces.Policy) middlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -153,17 +169,9 @@ func authWithPolicy(policy interfaces.Policy) middlewareFunc {
 				input.Header[key] = r.Header.Get(key)
 			}
 
-			if claims := ctxutil.GoogleIDToken(r.Context()); claims != nil {
-				input.Auth.Google = claims
-			}
-			if auth := ctxutil.GitHubAppAuth(r.Context()); auth != nil {
-				input.Auth.GitHub.App = auth
-			}
-			if auth := ctxutil.GitHubActionToken(r.Context()); auth != nil {
-				input.Auth.GitHub.Action = auth
-			}
-
 			ctx := r.Context()
+			input.Auth = authFromContext(ctx)
+
 			var output model.AuthQueryOutput
 			if err := policy.Query(ctx, "data.auth", input, &output); err != nil {
 				handleError(ctx, w, err)
