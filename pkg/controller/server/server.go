@@ -21,6 +21,7 @@ type config struct {
 	githubSecrets             []string
 	validateGitHubActionToken bool
 	validateGoogleIDToken     bool
+	authErrStatusCode         int
 }
 
 type Option func(*config)
@@ -49,10 +50,18 @@ func WithGoogleIDTokenValidation() Option {
 	}
 }
 
+func WithAuthErrStatusCode(code int) Option {
+	return func(cfg *config) {
+		cfg.authErrStatusCode = code
+	}
+}
+
 func New(uc interfaces.UseCases, options ...Option) http.Handler {
-	var cfg config
+	cfg := &config{
+		authErrStatusCode: http.StatusForbidden,
+	}
 	for _, opt := range options {
-		opt(&cfg)
+		opt(cfg)
 	}
 
 	route := chi.NewRouter()
@@ -73,7 +82,7 @@ func New(uc interfaces.UseCases, options ...Option) http.Handler {
 		}
 
 		if cfg.policy != nil {
-			r.Use(authWithPolicy(cfg.policy))
+			r.Use(authWithPolicy(cfg.policy, cfg.authErrStatusCode))
 		}
 
 		r.Post("/*", handleMessage(uc))
@@ -82,7 +91,24 @@ func New(uc interfaces.UseCases, options ...Option) http.Handler {
 	return route
 }
 
-func handleError(ctx context.Context, w http.ResponseWriter, err error) {
+type handleErrorOpt struct {
+	forceCode int
+}
+
+type handleErrorOption func(o *handleErrorOpt)
+
+func handleErrorWithForceCode(code int) handleErrorOption {
+	return func(o *handleErrorOpt) {
+		o.forceCode = code
+	}
+}
+
+func handleError(ctx context.Context, w http.ResponseWriter, err error, options ...handleErrorOption) {
+	opt := &handleErrorOpt{}
+	for _, o := range options {
+		o(opt)
+	}
+
 	code := http.StatusInternalServerError
 	var xErr types.Error
 	if errors.As(err, &xErr) {
@@ -91,6 +117,9 @@ func handleError(ctx context.Context, w http.ResponseWriter, err error) {
 
 	ctxutil.Logger(ctx).Error("HTTP error", "err", err, "code", code)
 
+	if opt.forceCode > 0 {
+		code = opt.forceCode
+	}
 	http.Error(w, err.Error(), code)
 }
 

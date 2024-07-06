@@ -110,12 +110,11 @@ func TestGitHubActionToken(t *testing.T) {
 }
 
 func TestGoogleIDTokenAuth(t *testing.T) {
-	token := testutil.LoadEnv(t, "TEST_GOOGLE_ID_TOKEN")
-
 	type testCase struct {
-		newReq     func() *http.Request
+		newReq     func(t *testing.T) *http.Request
 		expectCode int
 		expectCall int
+		forceCode  int
 	}
 
 	runTest := func(tc testCase) func(t *testing.T) {
@@ -136,8 +135,9 @@ func TestGoogleIDTokenAuth(t *testing.T) {
 			mux := server.New(ucMock,
 				server.WithGoogleIDTokenValidation(),
 				server.WithPolicy(policy),
+				server.WithAuthErrStatusCode(tc.forceCode),
 			)
-			mux.ServeHTTP(w, tc.newReq())
+			mux.ServeHTTP(w, tc.newReq(t))
 
 			gt.Equal(t, w.Code, tc.expectCode)
 			gt.A(t, ucMock.HandleMessageCalls()).Length(tc.expectCall)
@@ -145,7 +145,8 @@ func TestGoogleIDTokenAuth(t *testing.T) {
 	}
 
 	t.Run("With valid token", runTest(testCase{
-		newReq: func() *http.Request {
+		newReq: func(t *testing.T) *http.Request {
+			token := testutil.LoadEnv(t, "TEST_GOOGLE_ID_TOKEN")
 			req := httptest.NewRequest("POST", "/msg/google", nil)
 			req.Header.Set("Authorization", "Bearer "+token)
 			return req
@@ -155,10 +156,21 @@ func TestGoogleIDTokenAuth(t *testing.T) {
 	}))
 
 	t.Run("Without token", runTest(testCase{
-		newReq: func() *http.Request {
+		newReq: func(t *testing.T) *http.Request {
 			return httptest.NewRequest("POST", "/msg/google", nil)
 		},
 		expectCode: http.StatusForbidden,
 		expectCall: 0,
+	}))
+
+	t.Run("With invalid token and forceCode", runTest(testCase{
+		newReq: func(t *testing.T) *http.Request {
+			req := httptest.NewRequest("POST", "/msg/google", nil)
+			req.Header.Set("Authorization", "Bearer invalid-token")
+			return req
+		},
+		expectCode: http.StatusOK,
+		expectCall: 0,
+		forceCode:  http.StatusOK,
 	}))
 }
