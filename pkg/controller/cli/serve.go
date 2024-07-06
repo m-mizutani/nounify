@@ -24,6 +24,7 @@ func cmdServe() *cli.Command {
 		githubSecrets           cli.StringSlice
 		enableGitHubActionToken bool
 		enableGoogleIDToken     bool
+		enableAuthErrOK         bool
 	)
 
 	return &cli.Command{
@@ -72,6 +73,12 @@ func cmdServe() *cli.Command {
 				Usage:       "Enable Google ID token verification",
 				EnvVars:     []string{"NOUNIFY_GOOGLE_ID_TOKEN"},
 				Destination: &enableGoogleIDToken,
+			},
+			&cli.BoolFlag{
+				Name:        "auth-err-ok",
+				Usage:       "Return 200 OK when authentication error",
+				EnvVars:     []string{"NOUNIFY_AUTH_ERR_OK"},
+				Destination: &enableAuthErrOK,
 			},
 		},
 

@@ -175,7 +175,7 @@ func authFromContext(ctx context.Context) model.AuthContext {
 	return auth
 }
 
-func authWithPolicy(policy interfaces.Policy) middlewareFunc {
+func authWithPolicy(policy interfaces.Policy, errCode int) middlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			input := model.AuthQueryInput{
@@ -199,7 +199,9 @@ func authWithPolicy(policy interfaces.Policy) middlewareFunc {
 			ctxutil.Logger(r.Context()).Debug("auth query result", "input", input, "output", output)
 
 			if !output.Allow {
-				handleError(ctx, w, types.ErrForbidden)
+				handleError(ctx, w, types.ErrForbidden,
+					handleErrorWithForceCode(errCode),
+				)
 				return
 			}
 
