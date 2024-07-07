@@ -4,7 +4,7 @@ The unified notification service for all HTTP requests.
 
 `nounify` can receives any notification from any services via HTTP. For example, you can send a notification from GitHub Webhooks, Google Pub/Sub, and so on. When receiving a notification via HTTP request, `nounify` validates and modifies the notification message based on Rego policies. Rego can not only permit or deny the request but also creating a new message from notification data. So you can customize the notification message for each channel.
 
-![architecture](https://github.com/m-mizutani/nounify/assets/605953/1896df93-d853-45a2-8482-73044c425615)
+![architecture](https://github.com/m-mizutani/nounify/assets/605953/4b8b5460-85ce-42e4-a21b-90106a207134)
 
 For example, here is a policy that converts a GitHub Webhook message to a Slack message. The rule is triggered when a new issue is opened, and the message is sent to the `#github-notify` channel with the octopus emoji.
 
@@ -55,10 +55,14 @@ When creating a new issue such as [this](https://github.com/m-mizutani/nounify/i
 
 Set following environment variables to deploy `nounify`.
 
-- `NOUNIFY_ADDR` (required): The address to listen to. e.g. `0.0.0.0:8080`
-- `NOUNIFY_POLICY_FILE` (required): The path to the Rego policy file. e.g. `policies.rego`
-- `NOUNIFY_SLACK_OAUTH_TOKEN` (required): The OAuth token of Slack App. It's recommended to set the token as a secret.
-- `NOUNIFY_GITHUB_SECRET` (optional): The secret key for GitHub webhook. If you don't need to receive messages from GitHub, you can skip this.
+- Basic settings
+  - `NOUNIFY_ADDR` (required): The address to listen to. e.g. `0.0.0.0:8080`
+  - `NOUNIFY_POLICY_FILE` (required): The path to the Rego policy file. e.g. `policies.rego`
+  - `NOUNIFY_SLACK_OAUTH_TOKEN` (required): The OAuth token of Slack App. It's recommended to set the token as a secret.
+- Authentication settings
+  - `NOUNIFY_GITHUB_SECRET` (optional): The secret key for GitHub webhook. If you don't need to receive messages from GitHub, you can skip this.
+  - `NOUNIFY_GITHUB_ACTION_TOKEN` (optional): If set, nounify validates the token in `Authorization` header as `Bearer` from GitHub Actions OIDC.
+  - `NOUNIFY_GOOGLE_ID_TOKEN` (optional): If set, nounify validates the token in `Authorization` header as `Bearer` from Google ID Token.
 
 Run `nounify` with the following command.
 
