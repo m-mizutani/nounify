@@ -174,3 +174,39 @@ func TestGoogleIDTokenAuth(t *testing.T) {
 		forceCode:  http.StatusOK,
 	}))
 }
+
+//go:embed testdata/amazon_sns_message.json
+var amazonSNSMessage []byte
+
+func TestValidateSNSMessage(t *testing.T) {
+	_ = testutil.LoadEnv(t, "TEST_AMAZON_SNS_MESSAGE_VALIDATION")
+
+	r := httptest.NewRequest("POST", "/msg/sns", bytes.NewReader(amazonSNSMessage))
+	r.Header.Set("X-Amz-Sns-Message-Id", "xxx")
+	auth, err := server.ValidateSNSMessage(r)
+	gt.NoError(t, err)
+	gt.Equal(t, auth, &model.AmazonSNSAuth{
+		Type:      "Notification",
+		MessageId: "64663998-0a7d-5f91-b7e6-669c0dcbf767",
+		TopicArn:  "arn:aws:sns:ap-northeast-1:783957204773:nounify-test",
+		Timestamp: "2024-07-07T03:03:18.881Z",
+	})
+}
+
+//go:embed testdata/amazon_sns_subscribe.json
+var amazonSNSSubscribe []byte
+
+func TestValidateSNSSubscribe(t *testing.T) {
+	_ = testutil.LoadEnv(t, "TEST_AMAZON_SNS_MESSAGE_VALIDATION")
+
+	r := httptest.NewRequest("POST", "/msg/sns", bytes.NewReader(amazonSNSSubscribe))
+	r.Header.Set("X-Amz-Sns-Message-Id", "xxx")
+	auth, err := server.ValidateSNSMessage(r)
+	gt.NoError(t, err)
+	gt.Equal(t, auth, &model.AmazonSNSAuth{
+		Type:      "SubscriptionConfirmation",
+		MessageId: "1e25b020-e5de-4e10-851e-d214fdfca781",
+		TopicArn:  "arn:aws:sns:ap-northeast-1:783957204773:nounify-test",
+		Timestamp: "2024-07-07T03:12:03.669Z",
+	})
+}

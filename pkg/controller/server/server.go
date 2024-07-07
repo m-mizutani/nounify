@@ -21,6 +21,7 @@ type config struct {
 	githubSecrets             []string
 	validateGitHubActionToken bool
 	validateGoogleIDToken     bool
+	validateAmazonSNS         bool
 	authErrStatusCode         int
 }
 
@@ -47,6 +48,12 @@ func WithGitHubActionTokenValidation() Option {
 func WithGoogleIDTokenValidation() Option {
 	return func(cfg *config) {
 		cfg.validateGoogleIDToken = true
+	}
+}
+
+func WithAmazonSNSValidation() Option {
+	return func(cfg *config) {
+		cfg.validateAmazonSNS = true
 	}
 }
 
@@ -79,6 +86,9 @@ func New(uc interfaces.UseCases, options ...Option) http.Handler {
 		}
 		if cfg.validateGoogleIDToken {
 			r.Use(authGoogleIDToken())
+		}
+		if cfg.validateAmazonSNS {
+			r.Use(authAmazonSNS())
 		}
 
 		if cfg.policy != nil {

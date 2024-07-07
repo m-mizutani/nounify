@@ -3,8 +3,14 @@ package server
 import (
 	"bytes"
 	"context"
+	"crypto/x509"
+	"encoding/base64"
+	"encoding/json"
+	"encoding/pem"
+	"errors"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -141,6 +147,179 @@ func authGoogleIDToken() middlewareFunc {
 	}
 }
 
+type snsMessage struct {
+	Type             string `json:"Type"`
+	MessageId        string `json:"MessageId"`
+	Token            string `json:"Token"`
+	TopicArn         string `json:"TopicArn"`
+	Subject          string `json:"Subject"`
+	Message          string `json:"Message"`
+	Timestamp        string `json:"Timestamp"`
+	SignatureVersion string `json:"SignatureVersion"`
+	Signature        string `json:"Signature"`
+	SigningCertURL   string `json:"SigningCertURL"`
+	SubscribeURL     string `json:"SubscribeURL"`
+	UnsubscribeURL   string `json:"UnsubscribeURL"`
+}
+
+func authAmazonSNS() middlewareFunc {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			auth, err := validateSNSMessage(r)
+			if err != nil {
+				handleError(r.Context(), w, err)
+				return
+			}
+
+			r = r.WithContext(ctxutil.WithAmazonSNSAuth(r.Context(), auth))
+
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+func validateSNSMessage(r *http.Request) (*model.AmazonSNSAuth, error) {
+	if r.Header.Get("X-Amz-Sns-Message-Id") == "" {
+		return nil, nil
+	}
+
+	var msg snsMessage
+
+	// Read the request body
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to read request body")
+	}
+	defer r.Body.Close()
+	r.Body = io.NopCloser(bytes.NewReader(body)) // refill the body
+
+	// Unmarshal the JSON message
+	if err = json.Unmarshal(body, &msg); err != nil {
+		return nil, goerr.Wrap(err, "invalid JSON format").With("body", string(body))
+	}
+
+	cert, err := fetchAWSCert(r.Context(), msg.SigningCertURL)
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to fetch certificate")
+	}
+
+	messageString, err := buildSNSMessageString(msg)
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to build message string")
+	}
+
+	if err = verifyX509Signature(cert, msg.SignatureVersion, messageString, msg.Signature); err != nil {
+		return nil, goerr.Wrap(err, "failed to verify signature")
+	}
+
+	return &model.AmazonSNSAuth{
+		Type:      msg.Type,
+		MessageId: msg.MessageId,
+		TopicArn:  msg.TopicArn,
+		Timestamp: msg.Timestamp,
+	}, nil
+}
+
+func fetchAWSCert(ctx context.Context, certURL string) (*x509.Certificate, error) {
+	if u, err := url.Parse(certURL); err != nil {
+		return nil, goerr.Wrap(err, "invalid URL").With("url", certURL)
+	} else if u.Scheme != "https" || !strings.HasSuffix(u.Host, ".amazonaws.com") {
+		return nil, goerr.New("unacceptable URL").With("url", certURL)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, certURL, nil)
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to create request").With("url", certURL)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to fetch certificate").With("url", certURL)
+	}
+	defer resp.Body.Close()
+
+	certData, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to read certificate data")
+	}
+
+	block, _ := pem.Decode(certData)
+	if block == nil {
+		return nil, goerr.New("failed to decode PEM block")
+	}
+
+	cert, err := x509.ParseCertificate(block.Bytes)
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to parse certificate")
+	}
+
+	return cert, nil
+}
+
+func buildSNSMessageString(message snsMessage) (string, error) {
+	var msgParts []string
+
+	switch message.Type {
+	case "Notification":
+		msgParts = []string{
+			"Message", message.Message,
+			"MessageId", message.MessageId,
+		}
+
+		if message.Subject != "" {
+			msgParts = append(msgParts, "Subject", message.Subject)
+		}
+
+		msgParts = append(msgParts, []string{
+			"Timestamp", message.Timestamp,
+			"TopicArn", message.TopicArn,
+			"Type", message.Type,
+		}...)
+
+	case "SubscriptionConfirmation", "UnsubscribeConfirmation":
+		msgParts = []string{
+			"Message", message.Message,
+			"MessageId", message.MessageId,
+			"SubscribeURL", message.SubscribeURL,
+			"Timestamp", message.Timestamp,
+			"Token", message.Token,
+			"TopicArn", message.TopicArn,
+			"Type", message.Type,
+		}
+
+	default:
+		return "", errors.New("unknown message type")
+	}
+
+	return strings.Join(msgParts, "\n") + "\n", nil
+}
+
+func verifyX509Signature(cert *x509.Certificate, version, message, signature string) error {
+	signatureBytes, err := base64.StdEncoding.DecodeString(signature)
+	if err != nil {
+		return goerr.Wrap(err, "failed to decode signature").With("signature", signature)
+	}
+
+	alg := map[string]x509.SignatureAlgorithm{
+		"1": x509.SHA1WithRSA,
+		"2": x509.SHA256WithRSA,
+	}
+
+	sigAlg, ok := alg[version]
+	if !ok {
+		return goerr.New("unsupported signature version").With("version", version)
+	}
+
+	println("message:", message)
+	if err := cert.CheckSignature(sigAlg, []byte(message), signatureBytes); err != nil {
+		return goerr.Wrap(err, "failed to verify signature").
+			With("message", message).
+			With("signature", signature)
+	}
+
+	return nil
+}
+
 func authFromContext(ctx context.Context) model.AuthContext {
 	var auth model.AuthContext
 
@@ -170,6 +349,10 @@ func authFromContext(ctx context.Context) model.AuthContext {
 				auth.GitHub.Action[key] = value
 			}
 		}
+	}
+
+	if snsAuth := ctxutil.AmazonSNSAuth(ctx); snsAuth != nil {
+		auth.AWS.SNS = snsAuth
 	}
 
 	return auth
