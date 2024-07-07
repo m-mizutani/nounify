@@ -111,6 +111,8 @@ github.com/m-mizutani/clog v0.0.7 h1:yZstkXZ44gM1MqXeO30e0E0SCzoiKmO5uUDcmBfhha8
 github.com/m-mizutani/clog v0.0.7/go.mod h1:7/axE2EjIqJ3X7gA+sNMnyvtEw4Qsr9u5Z+rWlUsW7U=
 github.com/m-mizutani/goerr v0.1.13 h1:ApBRJ6vUkKEpB6IJX8ov0E0EK1yk4SWltHlUQaCLLLY=
 github.com/m-mizutani/goerr v0.1.13/go.mod h1:OoNepSLW5oF3dQWWZ3D2lVOTbzRsePvc6LrqhXcff5Y=
+github.com/m-mizutani/goerr v0.1.14-0.20240707234952-28c94fcee9fd h1:SKBwf3lk7C65kGDOwZ5pwuLJT/6wO1LothgRZ7v0wfM=
+github.com/m-mizutani/goerr v0.1.14-0.20240707234952-28c94fcee9fd/go.mod h1:OoNepSLW5oF3dQWWZ3D2lVOTbzRsePvc6LrqhXcff5Y=
 github.com/m-mizutani/gt v0.0.10 h1:gJsRcZ0R0kcVAGeahwDAVBCDCwOA/tFw3N1/kh3DnAY=
 github.com/m-mizutani/gt v0.0.10/go.mod h1:0MPYSfGBLmYjTduzADVmIqD58ELQ5IfBFiK/f0FmB3k=
 github.com/m-mizutani/masq v0.1.8 h1:sXTOtdVpWNpi4H+FxA5vyvs5HzqMjjYqNkL1JNjvS10=

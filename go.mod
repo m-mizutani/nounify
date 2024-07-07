@@ -10,7 +10,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/lestrrat-go/jwx/v2 v2.1.0
 	github.com/m-mizutani/clog v0.0.7
-	github.com/m-mizutani/goerr v0.1.13
+	github.com/m-mizutani/goerr v0.1.14-0.20240707234952-28c94fcee9fd
 	github.com/m-mizutani/gt v0.0.10
 	github.com/m-mizutani/masq v0.1.8
 	github.com/m-mizutani/opac v0.2.0
