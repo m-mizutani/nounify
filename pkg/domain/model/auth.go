@@ -46,3 +46,14 @@ func NewGitHubAppAuth(r *http.Request) *GitHubAppAuth {
 }
 
 type GitHubActionToken map[string]any
+
+type AwsAuth struct {
+	SNS *AmazonSNSAuth `json:"sns"`
+}
+
+type AmazonSNSAuth struct {
+	Type      string `json:"Type"`
+	MessageId string `json:"MessageId"`
+	TopicArn  string `json:"TopicArn"`
+	Timestamp string `json:"Timestamp"`
+}

@@ -33,6 +33,7 @@ func cmdServe() *cli.Command {
 		githubSecrets           cli.StringSlice
 		enableGitHubActionToken bool
 		enableGoogleIDToken     bool
+		enableAmazonSNS         bool
 		enableAuthErrOK         bool
 
 		sentry config.Sentry
@@ -82,6 +83,12 @@ func cmdServe() *cli.Command {
 			Destination: &enableGoogleIDToken,
 		},
 		&cli.BoolFlag{
+			Name:        "amazon-sns",
+			Usage:       "Enable Amazon SNS message verification",
+			EnvVars:     []string{"NOUNIFY_AMAZON_SNS"},
+			Destination: &enableAmazonSNS,
+		},
+		&cli.BoolFlag{
 			Name:        "auth-err-ok",
 			Usage:       "Return 200 OK when authentication error",
 			EnvVars:     []string{"NOUNIFY_AUTH_ERR_OK"},
@@ -123,6 +130,9 @@ func cmdServe() *cli.Command {
 			}
 			if enableGitHubActionToken {
 				serverOptions = append(serverOptions, server.WithGitHubActionTokenValidation())
+			}
+			if enableAmazonSNS {
+				serverOptions = append(serverOptions, server.WithAmazonSNSValidation())
 			}
 
 			if enableAuthErrOK {

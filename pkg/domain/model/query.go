@@ -31,6 +31,7 @@ type MessageField struct {
 type AuthContext struct {
 	GitHub GitHubAuth     `json:"github"`
 	Google map[string]any `json:"google"`
+	AWS    AwsAuth        `json:"aws"`
 }
 
 type AuthQueryInput struct {
