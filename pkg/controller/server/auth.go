@@ -170,8 +170,9 @@ func authAmazonSNS() middlewareFunc {
 				handleError(r.Context(), w, err)
 				return
 			}
-
-			r = r.WithContext(ctxutil.WithAmazonSNSAuth(r.Context(), auth))
+			if auth != nil {
+				r = r.WithContext(ctxutil.WithAmazonSNSAuth(r.Context(), auth))
+			}
 
 			next.ServeHTTP(w, r)
 		})
