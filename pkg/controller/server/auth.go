@@ -198,7 +198,7 @@ func validateSNSMessage(r *http.Request) (*model.AmazonSNSAuth, error) {
 		return nil, goerr.Wrap(err, "invalid JSON format").With("body", string(body))
 	}
 
-	cert, err := fetchAWSCert(msg.SigningCertURL)
+	cert, err := fetchAWSCert(r.Context(), msg.SigningCertURL)
 	if err != nil {
 		return nil, goerr.Wrap(err, "failed to fetch certificate")
 	}
@@ -220,14 +220,19 @@ func validateSNSMessage(r *http.Request) (*model.AmazonSNSAuth, error) {
 	}, nil
 }
 
-func fetchAWSCert(certURL string) (*x509.Certificate, error) {
+func fetchAWSCert(ctx context.Context, certURL string) (*x509.Certificate, error) {
 	if u, err := url.Parse(certURL); err != nil {
 		return nil, goerr.Wrap(err, "invalid URL").With("url", certURL)
 	} else if u.Scheme != "https" || !strings.HasSuffix(u.Host, ".amazonaws.com") {
 		return nil, goerr.New("unacceptable URL").With("url", certURL)
 	}
 
-	resp, err := http.Get(certURL)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, certURL, nil)
+	if err != nil {
+		return nil, goerr.Wrap(err, "failed to create request").With("url", certURL)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, goerr.Wrap(err, "failed to fetch certificate").With("url", certURL)
 	}
