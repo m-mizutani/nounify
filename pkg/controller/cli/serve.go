@@ -125,6 +125,10 @@ func cmdServe() *cli.Command {
 				serverOptions = append(serverOptions, server.WithGitHubActionTokenValidation())
 			}
 
+			if enableAuthErrOK {
+				serverOptions = append(serverOptions, server.WithAuthErrStatusCode(http.StatusOK))
+			}
+
 			s := &http.Server{
 				Addr:              addr,
 				ReadHeaderTimeout: 3 * time.Second,
