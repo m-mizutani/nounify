@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"mime"
 	"net/http"
 	"strings"
 
@@ -139,14 +140,31 @@ func newMessageQueryInput(r *http.Request) (*model.MessageQueryInput, error) {
 		return nil, goerr.Wrap(types.ErrInvalidInput.Wrap(err)).With("method", r.Method).With("path", r.URL.Path)
 	}
 
+	mediaType, _, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
+	if err != nil {
+		return nil, goerr.Wrap(types.ErrInvalidInput.Wrap(err)).With("method", r.Method).With("path", r.URL.Path)
+	}
+
 	var data any
-	switch strings.ToLower(r.Header.Get("Content-Type")) {
+	switch mediaType {
 	case "application/json":
 		if err := json.Unmarshal(body, &data); err != nil {
 			return nil, goerr.Wrap(types.ErrInvalidInput.Wrap(err)).
 				With("method", r.Method).
 				With("path", r.URL.Path).
 				With("body", string(body))
+		}
+
+	case "text/plain":
+		if r.Header.Get("X-Amz-Sns-Message-Id") != "" {
+			if err := json.Unmarshal(body, &data); err != nil {
+				return nil, goerr.Wrap(types.ErrInvalidInput.Wrap(err)).
+					With("method", r.Method).
+					With("path", r.URL.Path).
+					With("body", string(body))
+			}
+		} else {
+			data = string(body)
 		}
 
 	default:
