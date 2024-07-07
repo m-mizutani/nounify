@@ -59,7 +59,7 @@ func validateGitHubActionToken(authHdr string) (model.GitHubActionToken, error) 
 	hdr := strings.SplitN(authHdr, " ", 2)
 
 	// Skip if not Bearer token
-	if len(hdr) != 2 || hdr[0] != "Bearer" {
+	if len(hdr) != 2 || strings.ToLower(hdr[0]) != "bearer" {
 		return nil, nil
 	}
 
