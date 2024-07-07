@@ -311,7 +311,6 @@ func verifyX509Signature(cert *x509.Certificate, version, message, signature str
 		return goerr.New("unsupported signature version").With("version", version)
 	}
 
-	println("message:", message)
 	if err := cert.CheckSignature(sigAlg, []byte(message), signatureBytes); err != nil {
 		return goerr.Wrap(err, "failed to verify signature").
 			With("message", message).
