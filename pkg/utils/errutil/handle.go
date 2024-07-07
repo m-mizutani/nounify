@@ -9,10 +9,12 @@ import (
 )
 
 func Handle(ctx context.Context, msg string, err error) {
+	goErr := goerr.Unwrap(err)
+
 	// Sending error to Sentry
 	hub := sentry.CurrentHub().Clone()
 	hub.ConfigureScope(func(scope *sentry.Scope) {
-		if goErr := goerr.Unwrap(err); goErr != nil {
+		if goErr != nil {
 			for k, v := range goErr.Values() {
 				scope.SetExtra(k, v)
 			}
@@ -22,6 +24,7 @@ func Handle(ctx context.Context, msg string, err error) {
 
 	ctxutil.Logger(ctx).Error(msg,
 		"error", err,
+		"goErr", goErr,
 		"sentry.EventID", evID,
 	)
 }
