@@ -91,3 +91,44 @@ func TestServer(t *testing.T) {
 		},
 	}))
 }
+
+func TestParseRequest(t *testing.T) {
+	type testCase struct {
+		req     func() *http.Request
+		expCode int
+		expCall int
+		mock    func(ctx context.Context, schema types.Schema, input *model.MessageQueryInput) error
+	}
+
+	test := func(tc testCase) func(*testing.T) {
+		return func(t *testing.T) {
+			ucMock := mock.UseCasesMock{
+				HandleMessageFunc: tc.mock,
+			}
+			w := httptest.NewRecorder()
+
+			mux := server.New(&ucMock)
+			mux.ServeHTTP(w, tc.req())
+
+			gt.Equal(t, w.Code, tc.expCode)
+			gt.Equal(t, len(ucMock.HandleMessageCalls()), tc.expCall)
+		}
+	}
+
+	t.Run("amazon SNS", test(testCase{
+		req: func() *http.Request {
+			r := httptest.NewRequest(http.MethodPost, "/msg/schema", bytes.NewReader(amazonSNSMessage))
+			r.Header.Set("X-Amz-Sns-Message-Id", "message-id")
+			r.Header.Set("Content-Type", "text/plain; charset=UTF-8")
+			return r
+		},
+		expCode: http.StatusOK,
+		expCall: 1,
+		mock: func(ctx context.Context, schema types.Schema, input *model.MessageQueryInput) error {
+			data, ok := input.Body.(map[string]any)
+			gt.True(t, ok)
+			gt.Equal(t, data["Type"], "Notification")
+			return nil
+		},
+	}))
+}
