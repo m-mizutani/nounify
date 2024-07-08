@@ -23,7 +23,7 @@ func Handle(ctx context.Context, msg string, err error) {
 	evID := hub.CaptureException(err)
 
 	ctxutil.Logger(ctx).Error(msg,
-		"error", err,
+		"error", err.Error(),
 		"goErr", goErr,
 		"sentry.EventID", evID,
 	)
