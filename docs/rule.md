@@ -1,10 +1,12 @@
-# Policy
+# Rule
 
-## Message Policy
+The rule of notification and authentication in nounify is written in Rego language. The rule is a set of conditions and actions. The conditions are evaluated with the input of the HTTP request, and the actions are executed when the conditions are satisfied.
+
+## Message Rule
 
 package: `msg.{schema}`
 
-`schema` should be set to specify the policy for the message. You can name arbitrarily `schema` (e.g. `msg.github`) within the scope of Rego's package name rules. The `schema` is linked with POST path of `/msg/{schema}`. When the HTTP request is sent to the `/msg/my_policy`, the policy of package `msg.my_policy` is triggered.
+`schema` should be set to specify the rule for the message. You can name arbitrarily `schema` (e.g. `msg.github`) within the scope of Rego's package name rules. The `schema` is linked with POST path of `/msg/{schema}`. When the HTTP request is sent to the `/msg/my_policy`, the policy of package `msg.my_policy` is triggered.
 
 Schema can be nested with `.`. For example, both of `msg.github` and `msg.github.my_repo` are valid schema names. If the schema name with multiple `.`, the path of HTTP request should be `/msg/github/my_repo`.
 
@@ -29,7 +31,7 @@ Schema can be nested with `.`. For example, both of `msg.github` and `msg.github
 - `icon` (string): The icon URL of the message.
 - `emoji` (string): The emoji for icon of the message. This is prioritized over `icon`.
 
-## Auth Policy
+## Auth Rule
 
 package: `auth`
 

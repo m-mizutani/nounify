@@ -26,9 +26,9 @@ func joinFlags(flags ...[]cli.Flag) []cli.Flag {
 
 func cmdServe() *cli.Command {
 	var (
-		addr        string
-		slackToken  string
-		policyFiles cli.StringSlice
+		addr       string
+		slackToken string
+		ruleFiles  cli.StringSlice
 
 		githubSecrets           cli.StringSlice
 		enableGitHubActionToken bool
@@ -56,11 +56,11 @@ func cmdServe() *cli.Command {
 			Required:    true,
 		},
 		&cli.StringSliceFlag{
-			Name:        "policy",
-			Usage:       "Policy path of file(s). When path is directory, all files in the directory are loaded. File extension must be .rego",
-			Aliases:     []string{"p"},
-			EnvVars:     []string{"NOUNIFY_POLICY"},
-			Destination: &policyFiles,
+			Name:        "rule",
+			Usage:       "Path of rule file(s). When path is directory, all files in the directory are loaded. File extension must be .rego",
+			Aliases:     []string{"r"},
+			EnvVars:     []string{"NOUNIFY_RULE"},
+			Destination: &ruleFiles,
 			Required:    true,
 		},
 
@@ -109,9 +109,9 @@ func cmdServe() *cli.Command {
 			}
 
 			slackClient := slack.New(slackToken)
-			policy, err := opac.New(opac.Files(policyFiles.Value()...))
+			policy, err := opac.New(opac.Files(ruleFiles.Value()...))
 			if err != nil {
-				return goerr.Wrap(err, "failed to load policy files").With("files", policyFiles.Value())
+				return goerr.Wrap(err, "failed to load policy files").With("files", ruleFiles.Value())
 			}
 
 			uc := usecase.New(

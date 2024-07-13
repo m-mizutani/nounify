@@ -6,7 +6,7 @@ The unified notification service for all HTTP requests.
 
 ![architecture](https://github.com/m-mizutani/nounify/assets/605953/4b8b5460-85ce-42e4-a21b-90106a207134)
 
-For example, here is a policy that converts a GitHub Webhook message to a Slack message. The rule is triggered when a new issue is opened, and the message is sent to the `#github-notify` channel with the octopus emoji.
+For example, here is a rule that converts a GitHub Webhook message to a Slack message. The rule is triggered when a new issue is opened, and the message is sent to the `#github-notify` channel with the octopus emoji.
 
 ```rego
 package schema.github_webhook
@@ -57,7 +57,7 @@ Set following environment variables to deploy `nounify`.
 
 - Basic settings
   - `NOUNIFY_ADDR` (required): The address to listen to. e.g. `0.0.0.0:8080`
-  - `NOUNIFY_POLICY_FILE` (required): The path to the Rego policy file. e.g. `policies.rego`
+  - `NOUNIFY_RULE` (required): The path to the Rego policy file. e.g. `policies.rego`
   - `NOUNIFY_SLACK_OAUTH_TOKEN` (required): The OAuth token of Slack App. It's recommended to set the token as a secret.
 - Authentication settings
   - `NOUNIFY_GITHUB_SECRET` (optional): The secret key for GitHub webhook. If you don't need to receive messages from GitHub, you can skip this.
@@ -72,9 +72,9 @@ $ nounify serve
 
 See [the example release configs](https://github.com/m-mizutani/releases/tree/main/cloud-run/nounify) with Cloud Build and Cloud Run.
 
-## Policy
+## Rule
 
-See [the policy document](docs/policy.md) for more information.
+See [the rule document](docs/rule.md) for more information.
 
 ## License
 
