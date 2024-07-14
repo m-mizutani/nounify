@@ -3,6 +3,7 @@ package logging
 import (
 	"io"
 	"log/slog"
+	"os"
 
 	"github.com/fatih/color"
 	"github.com/m-mizutani/clog"
@@ -13,7 +14,9 @@ import (
 var defaultLogger *slog.Logger
 
 func init() {
-	defaultLogger = slog.Default()
+	if err := Configure(os.Stdout, "info", "console"); err != nil {
+		panic(err)
+	}
 }
 
 func Default() *slog.Logger {
@@ -25,7 +28,20 @@ func With(args ...any) *slog.Logger {
 }
 
 func Configure(w io.Writer, level, format string) error {
-	replacer := masq.New(masq.WithTag("secret"))
+	logger, err := New(w, level, format)
+	if err != nil {
+		return err
+	}
+
+	defaultLogger = logger
+	return nil
+}
+
+func New(w io.Writer, level, format string) (*slog.Logger, error) {
+	replacer := masq.New(
+		masq.WithTag("secret"),
+		masq.WithFieldName("Authorization"),
+	)
 
 	logLevels := map[string]slog.Level{
 		"debug": slog.LevelDebug,
@@ -36,7 +52,7 @@ func Configure(w io.Writer, level, format string) error {
 
 	slogLevel, ok := logLevels[level]
 	if !ok {
-		return goerr.New("invalid log level, must be debug, info, warn or error").With("level", level)
+		return nil, goerr.New("invalid log level, must be debug, info, warn or error").With("level", level)
 	}
 
 	var handler slog.Handler
@@ -71,10 +87,8 @@ func Configure(w io.Writer, level, format string) error {
 		})
 
 	default:
-		return goerr.New("Unknown log format, must be either one of 'console' or 'json'").With("format", format)
+		return nil, goerr.New("Unknown log format, must be either one of 'console' or 'json'").With("format", format)
 	}
 
-	defaultLogger = slog.New(handler)
-
-	return nil
+	return slog.New(handler), nil
 }
