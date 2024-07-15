@@ -162,7 +162,7 @@ type snsMessage struct {
 	UnsubscribeURL   string `json:"UnsubscribeURL"`
 }
 
-func authAmazonSNS() middlewareFunc {
+func authAwsSNS() middlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			auth, err := validateSNSMessage(r)
@@ -171,7 +171,7 @@ func authAmazonSNS() middlewareFunc {
 				return
 			}
 			if auth != nil {
-				r = r.WithContext(ctxutil.WithAmazonSNSAuth(r.Context(), auth))
+				r = r.WithContext(ctxutil.WithAwsSNSAuth(r.Context(), auth))
 			}
 
 			next.ServeHTTP(w, r)
@@ -179,7 +179,7 @@ func authAmazonSNS() middlewareFunc {
 	}
 }
 
-func validateSNSMessage(r *http.Request) (*model.AmazonSNSAuth, error) {
+func validateSNSMessage(r *http.Request) (*model.AwsSNSAuth, error) {
 	if r.Header.Get("X-Amz-Sns-Message-Id") == "" {
 		return nil, nil
 	}
@@ -213,7 +213,7 @@ func validateSNSMessage(r *http.Request) (*model.AmazonSNSAuth, error) {
 		return nil, goerr.Wrap(err, "failed to verify signature")
 	}
 
-	return &model.AmazonSNSAuth{
+	return &model.AwsSNSAuth{
 		Type:      msg.Type,
 		MessageId: msg.MessageId,
 		TopicArn:  msg.TopicArn,
@@ -351,7 +351,7 @@ func authFromContext(ctx context.Context) model.AuthContext {
 		}
 	}
 
-	if snsAuth := ctxutil.AmazonSNSAuth(ctx); snsAuth != nil {
+	if snsAuth := ctxutil.AwsSNSAuth(ctx); snsAuth != nil {
 		auth.AWS.SNS = snsAuth
 	}
 

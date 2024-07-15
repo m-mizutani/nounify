@@ -12,7 +12,7 @@ const (
 	ctxAuthGitHubApp     = ctxAuthKey("github_app_auth")
 	ctxAuthGitHubAction  = ctxAuthKey("github_action_auth")
 	ctxAuthGoogleIDToken = ctxAuthKey("google_id_token")
-	ctxAuthAmazonSNS     = ctxAuthKey("amazon_sns_auth")
+	ctxAuthAwsSNS        = ctxAuthKey("amazon_sns_auth")
 )
 
 func WithGitHubAppAuth(ctx context.Context, auth *model.GitHubAppAuth) context.Context {
@@ -51,12 +51,12 @@ func GoogleIDToken(ctx context.Context) map[string]any {
 	return token
 }
 
-func WithAmazonSNSAuth(ctx context.Context, auth *model.AmazonSNSAuth) context.Context {
-	return context.WithValue(ctx, ctxAuthAmazonSNS, auth)
+func WithAwsSNSAuth(ctx context.Context, auth *model.AwsSNSAuth) context.Context {
+	return context.WithValue(ctx, ctxAuthAwsSNS, auth)
 }
 
-func AmazonSNSAuth(ctx context.Context) *model.AmazonSNSAuth {
-	auth, ok := ctx.Value(ctxAuthAmazonSNS).(*model.AmazonSNSAuth)
+func AwsSNSAuth(ctx context.Context) *model.AwsSNSAuth {
+	auth, ok := ctx.Value(ctxAuthAwsSNS).(*model.AwsSNSAuth)
 	if !ok {
 		return nil
 	}
