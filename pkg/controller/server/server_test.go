@@ -117,7 +117,7 @@ func TestParseRequest(t *testing.T) {
 
 	t.Run("amazon SNS", test(testCase{
 		req: func() *http.Request {
-			r := httptest.NewRequest(http.MethodPost, "/msg/schema", bytes.NewReader(amazonSNSMessage))
+			r := httptest.NewRequest(http.MethodPost, "/msg/schema", bytes.NewReader(awsSNSMessage))
 			r.Header.Set("X-Amz-Sns-Message-Id", "message-id")
 			r.Header.Set("Content-Type", "text/plain; charset=UTF-8")
 			return r
