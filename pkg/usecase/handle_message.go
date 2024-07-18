@@ -15,7 +15,7 @@ func (x *UseCases) HandleMessage(ctx context.Context, schema types.Schema, input
 
 	var output model.MessageQueryOutput
 	if err := x.policy.Query(ctx, schema.ToQuery(), input, &output); err != nil {
-		return goerr.Wrap(err).With("query", schema.ToQuery())
+		return goerr.Wrap(err).With("query", schema.ToQuery()).With("input", input)
 	}
 	ctxutil.Logger(ctx).Info("msg query result", "input", input, "output", output)
 
